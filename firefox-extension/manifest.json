@@ -10,8 +10,7 @@
     "tabs",
     "*://*.service-now.com/*",
     "*://*.servicenow.com/*",
-    "http://192.168.31.59/*",
-    "http://192.168.31.59:8085/*"
+    "<all_urls>"
   ],
 
   "background": {
@@ -21,9 +20,7 @@
 
   "content_scripts": [{
     "matches": [
-      "*://veeam2.service-now.com/*",
-      "*://*.service-now.com/now/cwf/agent/*",
-      "*://*.service-now.com/*_list.do*",
+      "*://*.service-now.com/*",
       "*://*.servicenow.com/*"
     ],
     "js": ["content.js"],

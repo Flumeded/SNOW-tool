@@ -7,6 +7,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   const caseCountEl = document.getElementById('caseCount');
   const enableToggle = document.getElementById('enableToggle');
   const syncNowBtn = document.getElementById('syncNowBtn');
+  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const serverUrlInput = document.getElementById('serverUrlInput');
+  const syncIntervalInput = document.getElementById('syncIntervalInput');
+  const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+  const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
+  const serverDisplay = document.getElementById('serverDisplay');
 
   // Load current status from background
   async function loadStatus() {
@@ -29,6 +36,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Update case count
       caseCountEl.textContent = response.lastSyncCount || 0;
+
+      // Update settings inputs
+      serverUrlInput.value = response.serverUrl || '';
+      syncIntervalInput.value = response.syncInterval || 5;
+
+      // Update footer display
+      if (response.serverUrl) {
+        try {
+          const url = new URL(response.serverUrl);
+          serverDisplay.textContent = `Server: ${url.host}`;
+        } catch {
+          serverDisplay.textContent = `Server: ${response.serverUrl}`;
+        }
+      } else {
+        serverDisplay.textContent = 'Server: Not configured';
+      }
 
     } catch (e) {
       console.error('Failed to get status:', e);
@@ -100,6 +123,42 @@ document.addEventListener('DOMContentLoaded', async () => {
       syncNowBtn.disabled = false;
       syncNowBtn.textContent = 'Sync Now';
     }, 2000);
+  });
+
+  // Handle settings button
+  settingsBtn.addEventListener('click', () => {
+    settingsPanel.style.display = settingsPanel.style.display === 'none' ? 'block' : 'none';
+  });
+
+  // Handle save settings
+  saveSettingsBtn.addEventListener('click', async () => {
+    const serverUrl = serverUrlInput.value.trim();
+    const syncInterval = parseInt(syncIntervalInput.value, 10);
+
+    if (!serverUrl) {
+      alert('Please enter a server URL');
+      return;
+    }
+
+    if (isNaN(syncInterval) || syncInterval < 1 || syncInterval > 60) {
+      alert('Sync interval must be between 1 and 60 minutes');
+      return;
+    }
+
+    await browser.runtime.sendMessage({
+      action: 'saveSettings',
+      serverUrl: serverUrl,
+      syncInterval: syncInterval
+    });
+
+    settingsPanel.style.display = 'none';
+    await loadStatus();
+  });
+
+  // Handle cancel settings
+  cancelSettingsBtn.addEventListener('click', async () => {
+    settingsPanel.style.display = 'none';
+    await loadStatus(); // Reset to saved values
   });
 
   // Listen for sync completion from background

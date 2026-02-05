@@ -36,10 +36,31 @@
 
     <div class="actions">
       <button id="syncNowBtn" class="btn-primary">Sync Now</button>
+      <button id="settingsBtn" class="btn-secondary">Settings</button>
     </div>
 
-    <div class="footer">
-      <span>Server: 192.168.31.59:8085</span>
+    <!-- Settings Panel (hidden by default) -->
+    <div class="settings-panel" id="settingsPanel" style="display: none;">
+      <h2>Settings</h2>
+
+      <div class="form-group">
+        <label for="serverUrlInput">Server URL:</label>
+        <input type="text" id="serverUrlInput" placeholder="http://localhost:8085/api/upload-json">
+      </div>
+
+      <div class="form-group">
+        <label for="syncIntervalInput">Sync Interval (minutes):</label>
+        <input type="number" id="syncIntervalInput" min="1" max="60" value="5">
+      </div>
+
+      <div class="settings-actions">
+        <button id="saveSettingsBtn" class="btn-primary">Save</button>
+        <button id="cancelSettingsBtn" class="btn-secondary">Cancel</button>
+      </div>
+    </div>
+
+    <div class="footer" id="footer">
+      <span id="serverDisplay">Server: Not configured</span>
     </div>
   </div>
 

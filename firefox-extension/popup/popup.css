@@ -23,6 +23,15 @@ h1 {
   text-align: center;
 }
 
+h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #fff;
+  padding-top: 12px;
+  border-top: 1px solid #333;
+}
+
 /* Status Section */
 .status-section {
   background: #16213e;
@@ -140,20 +149,26 @@ h1 {
 
 /* Actions */
 .actions {
+  display: flex;
+  gap: 8px;
   margin-bottom: 12px;
 }
 
-.btn-primary {
-  width: 100%;
+.btn-primary,
+.btn-secondary {
+  flex: 1;
   padding: 10px;
-  background: #e94560;
-  color: #fff;
   border: none;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s;
+}
+
+.btn-primary {
+  background: #e94560;
+  color: #fff;
 }
 
 .btn-primary:hover {
@@ -163,6 +178,55 @@ h1 {
 .btn-primary:disabled {
   background: #666;
   cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #333;
+  color: #ccc;
+}
+
+.btn-secondary:hover {
+  background: #444;
+}
+
+/* Settings Panel */
+.settings-panel {
+  margin-top: 8px;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 11px;
+  color: #aaa;
+  margin-bottom: 4px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px 10px;
+  background: #16213e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #e94560;
+}
+
+.form-group input::placeholder {
+  color: #666;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 8px;
 }
 
 /* Footer */

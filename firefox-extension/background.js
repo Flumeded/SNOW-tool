@@ -1,11 +1,13 @@
 // ServiceNow Case Tracker - Background Script
 // Handles alarm scheduling, tab communication, and server sync
 
-const SERVER_URL = 'http://192.168.31.59:8085/api/upload-json';
+const DEFAULT_SERVER_URL = 'http://localhost:8085/api/upload-json';
 const ALARM_NAME = 'servicenow-sync';
-const SYNC_INTERVAL_MINUTES = 5;
+const DEFAULT_SYNC_INTERVAL = 5;
 
 // State
+let serverUrl = DEFAULT_SERVER_URL;
+let syncInterval = DEFAULT_SYNC_INTERVAL;
 let lastSyncTime = null;
 let lastSyncStatus = null;
 let lastSyncCount = 0;
@@ -14,34 +16,47 @@ let isEnabled = true;
 // Initialize on install/startup
 browser.runtime.onInstalled.addListener(() => {
   console.log('ServiceNow Case Tracker installed');
-  initializeAlarm();
-  loadSettings();
+  loadSettings().then(() => {
+    initializeAlarm();
+  });
 });
 
 // Also initialize on browser startup
 browser.runtime.onStartup.addListener(() => {
   console.log('ServiceNow Case Tracker started');
-  initializeAlarm();
-  loadSettings();
+  loadSettings().then(() => {
+    initializeAlarm();
+  });
 });
 
 // Initialize alarm
 function initializeAlarm() {
-  browser.alarms.create(ALARM_NAME, {
-    delayInMinutes: 1,
-    periodInMinutes: SYNC_INTERVAL_MINUTES
+  browser.alarms.clear(ALARM_NAME).then(() => {
+    browser.alarms.create(ALARM_NAME, {
+      delayInMinutes: 1,
+      periodInMinutes: syncInterval
+    });
+    console.log(`Alarm set for every ${syncInterval} minutes`);
   });
-  console.log(`Alarm set for every ${SYNC_INTERVAL_MINUTES} minutes`);
 }
 
 // Load settings from storage
 async function loadSettings() {
   try {
-    const data = await browser.storage.local.get(['isEnabled', 'lastSyncTime', 'lastSyncStatus', 'lastSyncCount']);
+    const data = await browser.storage.local.get([
+      'isEnabled',
+      'lastSyncTime',
+      'lastSyncStatus',
+      'lastSyncCount',
+      'serverUrl',
+      'syncInterval'
+    ]);
     isEnabled = data.isEnabled !== false; // Default to true
     lastSyncTime = data.lastSyncTime || null;
     lastSyncStatus = data.lastSyncStatus || null;
     lastSyncCount = data.lastSyncCount || 0;
+    serverUrl = data.serverUrl || DEFAULT_SERVER_URL;
+    syncInterval = data.syncInterval || DEFAULT_SYNC_INTERVAL;
   } catch (e) {
     console.error('Failed to load settings:', e);
   }
@@ -54,7 +69,9 @@ async function saveSettings() {
       isEnabled,
       lastSyncTime,
       lastSyncStatus,
-      lastSyncCount
+      lastSyncCount,
+      serverUrl,
+      syncInterval
     });
   } catch (e) {
     console.error('Failed to save settings:', e);
@@ -131,7 +148,9 @@ async function triggerSync() {
 // POST cases to server
 async function postToServer(cases) {
   try {
-    const response = await fetch(SERVER_URL, {
+    console.log(`POSTing ${cases.length} cases to ${serverUrl}`);
+
+    const response = await fetch(serverUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -185,7 +204,9 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       isEnabled,
       lastSyncTime,
       lastSyncStatus,
-      lastSyncCount
+      lastSyncCount,
+      serverUrl,
+      syncInterval
     });
     return true;
   }
@@ -203,10 +224,26 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.action === 'saveSettings') {
+    serverUrl = message.serverUrl || serverUrl;
+    const newInterval = message.syncInterval || syncInterval;
+
+    // Reinitialize alarm if interval changed
+    if (newInterval !== syncInterval) {
+      syncInterval = newInterval;
+      initializeAlarm();
+    }
+
+    saveSettings();
+    sendResponse({ success: true });
+    return true;
+  }
+
   return false;
 });
 
 // Log startup
 console.log('ServiceNow Case Tracker background script loaded');
-initializeAlarm();
-loadSettings();
+loadSettings().then(() => {
+  initializeAlarm();
+});
