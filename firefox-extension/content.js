@@ -256,27 +256,26 @@ function extractFromShadowRoots(allShadows) {
   const rows = mainTable.querySelectorAll('tbody tr');
   console.log(`Processing ${rows.length} rows`);
 
-  // Check if there's a mismatch between header count and cell count
-  // ServiceNow often has hidden columns (Record Preview, Row Selection) in headers but not in cells
+  // Detect header offset - ServiceNow often has empty/hidden columns (Record Preview, Row Selection)
+  // that exist in both headers and cells but don't contain data
   let headerOffset = 0;
   if (rows.length > 0) {
     const firstRowCells = rows[0].querySelectorAll('td');
     const headerCount = mainHeaders.length;
     const cellCount = firstRowCells.length;
 
-    if (headerCount > cellCount) {
-      // Find offset by looking for "Number" column position
-      const numberHeaderIdx = mainHeaders.findIndex(h => h.toLowerCase() === 'number');
-      if (numberHeaderIdx >= 0) {
-        // Check first few cells to find where case numbers start
-        for (let i = 0; i < Math.min(5, cellCount); i++) {
-          const cellText = cleanText(firstRowCells[i].textContent);
-          // Case numbers are typically 8 digits
-          if (/^\d{7,8}$/.test(cellText)) {
-            headerOffset = numberHeaderIdx - i;
-            console.log(`Header offset detected: ${headerOffset} (Number header at ${numberHeaderIdx}, found in cell ${i})`);
-            break;
-          }
+    // Find where "Number" header is
+    const numberHeaderIdx = mainHeaders.findIndex(h => h.toLowerCase() === 'number');
+
+    if (numberHeaderIdx >= 0) {
+      // Find which cell actually contains the case number (7-8 digit number)
+      for (let i = 0; i < Math.min(cellCount, 5); i++) {
+        const cellText = cleanText(firstRowCells[i].textContent);
+        // Case numbers are typically 7-8 digits at the start of the cell
+        if (/^\d{7,8}/.test(cellText)) {
+          headerOffset = numberHeaderIdx - i;
+          console.log(`Header offset detected: ${headerOffset} (Number header at ${numberHeaderIdx}, case number found in cell ${i})`);
+          break;
         }
       }
     }
