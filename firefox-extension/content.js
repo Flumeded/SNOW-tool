@@ -148,9 +148,10 @@ function extractFromShadowRoots(allShadows) {
 
   console.log(`Found ${grids.length} grid components`);
 
-  // Find the main case list grid (the one with SLA or case-related columns)
+  // Find the main case list grid - prioritize by specificity and row count
   let mainTable = null;
   let mainHeaders = [];
+  let bestScore = -1;
 
   for (const grid of grids) {
     const table = grid.shadow.querySelector('table');
@@ -158,24 +159,44 @@ function extractFromShadowRoots(allShadows) {
 
     const headerCells = table.querySelectorAll('th');
     const headers = Array.from(headerCells).map(th => cleanText(th.textContent));
+    const rows = table.querySelectorAll('tbody tr');
+    const rowCount = rows.length;
 
-    console.log(`Grid has ${headerCells.length} headers:`, headers);
+    console.log(`Grid: ${rowCount} rows, headers: [${headers.slice(0, 5).join(', ')}...]`);
 
-    // Look for case-specific columns
-    const hasCaseColumns = headers.some(h =>
-      h.toLowerCase().includes('sla') ||
-      h.toLowerCase().includes('number') ||
-      h.toLowerCase().includes('priority') ||
-      h.toLowerCase().includes('state') ||
-      h.toLowerCase().includes('region')
-    );
+    // Score the grid based on how likely it is the main case list
+    let score = 0;
 
-    if (hasCaseColumns && headers.length > 3) {
+    // Strong indicators (unique to main case list)
+    if (headers.some(h => h.toLowerCase().includes('sla'))) score += 100;
+    if (headers.some(h => h.toLowerCase().includes('time to respond'))) score += 100;
+    if (headers.some(h => h.toLowerCase().includes('sub state') || h.toLowerCase().includes('sub-state'))) score += 50;
+    if (headers.some(h => h.toLowerCase().includes('region'))) score += 50;
+
+    // Weaker indicators (common across multiple grids)
+    if (headers.some(h => h.toLowerCase() === 'number')) score += 10;
+    if (headers.some(h => h.toLowerCase() === 'priority')) score += 5;
+
+    // More rows = more likely to be the main list
+    score += rowCount;
+
+    // Must have at least Number column
+    const hasNumber = headers.some(h => h.toLowerCase() === 'number');
+    if (!hasNumber) continue;
+
+    console.log(`  Score: ${score}`);
+
+    if (score > bestScore) {
+      bestScore = score;
       mainTable = table;
       mainHeaders = headers;
-      console.log('Found main case table with headers:', headers);
-      break;
     }
+  }
+
+  if (mainTable) {
+    const rows = mainTable.querySelectorAll('tbody tr');
+    console.log(`Selected grid with ${rows.length} rows, score: ${bestScore}`);
+    console.log('Headers:', mainHeaders);
   }
 
   // If no grid found, try finding any table with case data
