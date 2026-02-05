@@ -256,6 +256,33 @@ function extractFromShadowRoots(allShadows) {
   const rows = mainTable.querySelectorAll('tbody tr');
   console.log(`Processing ${rows.length} rows`);
 
+  // Check if there's a mismatch between header count and cell count
+  // ServiceNow often has hidden columns (Record Preview, Row Selection) in headers but not in cells
+  let headerOffset = 0;
+  if (rows.length > 0) {
+    const firstRowCells = rows[0].querySelectorAll('td');
+    const headerCount = mainHeaders.length;
+    const cellCount = firstRowCells.length;
+
+    if (headerCount > cellCount) {
+      // Find offset by looking for "Number" column position
+      const numberHeaderIdx = mainHeaders.findIndex(h => h.toLowerCase() === 'number');
+      if (numberHeaderIdx >= 0) {
+        // Check first few cells to find where case numbers start
+        for (let i = 0; i < Math.min(5, cellCount); i++) {
+          const cellText = cleanText(firstRowCells[i].textContent);
+          // Case numbers are typically 8 digits
+          if (/^\d{7,8}$/.test(cellText)) {
+            headerOffset = numberHeaderIdx - i;
+            console.log(`Header offset detected: ${headerOffset} (Number header at ${numberHeaderIdx}, found in cell ${i})`);
+            break;
+          }
+        }
+      }
+    }
+    console.log(`Headers: ${headerCount}, Cells: ${cellCount}, Offset: ${headerOffset}`);
+  }
+
   rows.forEach((row, rowIndex) => {
     const cells = row.querySelectorAll('td');
     if (cells.length === 0) return;
@@ -263,7 +290,9 @@ function extractFromShadowRoots(allShadows) {
     const caseData = {};
 
     cells.forEach((cell, cellIndex) => {
-      const fieldName = columnMap[cellIndex];
+      // Apply offset to align cells with headers
+      const headerIndex = cellIndex + headerOffset;
+      const fieldName = columnMap[headerIndex];
       if (fieldName) {
         // Get text, handling links and nested elements
         let value = '';
