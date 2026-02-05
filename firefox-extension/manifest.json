@@ -1,0 +1,53 @@
+{
+  "manifest_version": 2,
+  "name": "ServiceNow Case Tracker",
+  "version": "1.0.0",
+  "description": "Auto-sync ServiceNow cases to local tracker server",
+
+  "permissions": [
+    "alarms",
+    "storage",
+    "tabs",
+    "*://*.service-now.com/*",
+    "*://*.servicenow.com/*",
+    "http://192.168.31.59/*",
+    "http://192.168.31.59:8085/*"
+  ],
+
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  },
+
+  "content_scripts": [{
+    "matches": [
+      "*://veeam2.service-now.com/*",
+      "*://*.service-now.com/now/cwf/agent/*",
+      "*://*.service-now.com/*_list.do*",
+      "*://*.servicenow.com/*"
+    ],
+    "js": ["content.js"],
+    "run_at": "document_idle"
+  }],
+
+  "browser_action": {
+    "default_icon": {
+      "16": "icons/icon-16.svg",
+      "48": "icons/icon-48.svg"
+    },
+    "default_popup": "popup/popup.html",
+    "default_title": "SN Case Tracker"
+  },
+
+  "icons": {
+    "16": "icons/icon-16.svg",
+    "48": "icons/icon-48.svg"
+  },
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "servicenow-tracker@local",
+      "strict_min_version": "91.0"
+    }
+  }
+}
